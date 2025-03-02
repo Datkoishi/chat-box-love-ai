@@ -1,182 +1,112 @@
+class LoveTheme:
+    # Colors
+    PRIMARY = "#0084FF"
+    SECONDARY = "#E4E6EB"
+    BACKGROUND = "#F0F2F5"
+    WHITE = "#FFFFFF"
+    BLACK = "#000000"
+    GRAY = "#65676B"
+    
+    # Message colors
+    USER_MESSAGE_BG = "#E3F2FD"
+    BOT_MESSAGE_BG = "#FFFFFF"
+    
+    # Font sizes
+    FONT_SMALL = "13px"
+    FONT_NORMAL = "14px"
+    FONT_LARGE = "16px"
+
 class StyleSheet:
-    MAIN_WINDOW = """
-        QMainWindow {
-            background-color: white;
-        }
+    MAIN_WINDOW = f"""
+        QMainWindow {{
+            background-color: {LoveTheme.BACKGROUND};
+        }}
     """
     
-    CHAT_DISPLAY = """
-        QTextEdit {
-            background-color: rgba(255, 255, 255, 0.92);
+    SIDEBAR = f"""
+        QWidget {{
+            background-color: {LoveTheme.WHITE};
+            border-right: 1px solid {LoveTheme.SECONDARY};
+        }}
+    """
+    
+    SIDEBAR_BUTTON = f"""
+        QPushButton {{
+            background-color: {LoveTheme.BACKGROUND};
             border: none;
-            border-radius: 25px;
-            padding: 20px;
-            font-size: 14px;
-            margin: 15px;
-            color: #2C3E50;
-        }
-        QScrollBar:vertical {
+            border-radius: 8px;
+            padding: 5px;
+            font-size: 22px;
+        }}
+        QPushButton:hover {{
+            background-color: {LoveTheme.SECONDARY};
+        }}
+    """
+    
+    CHAT_DISPLAY = f"""
+        QTextEdit {{
             border: none;
-            background: rgba(255, 255, 255, 0.1);
-            width: 10px;
-            margin: 0;
-        }
-        QScrollBar::handle:vertical {
-            background: rgba(255, 107, 107, 0.5);
-            min-height: 20px;
-            border-radius: 5px;
-        }
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            background-color: {LoveTheme.BACKGROUND};
+            padding: 10px;
+            font-size: {LoveTheme.FONT_NORMAL};
+            color: {LoveTheme.BLACK};
+        }}
+        QScrollBar:vertical {{
+            border: none;
+            background: transparent;
+            width: 8px;
+            margin: 0px;
+        }}
+        QScrollBar::handle:vertical {{
+            background: rgba(0, 0, 0, 0.2);
+            min-height: 30px;
+            border-radius: 4px;
+        }}
+        QScrollBar::handle:vertical:hover {{
+            background: rgba(0, 0, 0, 0.3);
+        }}
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
             height: 0px;
-        }
+        }}
+        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+            background: none;
+        }}
     """
     
-    MESSAGE_INPUT = """
-        QTextEdit {
-            background-color: rgba(255, 255, 255, 0.92);
-            border: 2px solid rgba(255, 107, 107, 0.3);
-            border-radius: 25px;
-            padding: 12px 20px;
-            font-size: 14px;
-            margin: 10px;
-            color: #2C3E50;
-        }
-        QTextEdit:focus {
-            border: 2px solid #FF6B6B;
-            background-color: white;
-        }
-    """
-    
-    SEND_BUTTON = """
-        QPushButton {
-            background-color: #FF6B6B;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 12px 30px;
-            font-size: 14px;
-            font-weight: bold;
-            margin: 10px;
-            min-width: 100px;
-        }
-        QPushButton:hover {
-            background-color: #FF8787;
-        }
-        QPushButton:pressed {
-            background-color: #FF5252;
-        }
-    """
-
-    FEATURE_BUTTON = """
-        QPushButton {
-            background-color: rgba(255, 255, 255, 0.92);
-            color: #2C3E50;
-            border: 2px solid #FF6B6B;
+    INPUT_FRAME = f"""
+        QFrame {{
+            background-color: {LoveTheme.BACKGROUND};
             border-radius: 20px;
-            padding: 10px 20px;
-            font-size: 13px;
-            font-weight: bold;
-            margin: 5px;
-        }
-        QPushButton:hover {
-            background-color: #FF6B6B;
-            color: white;
-        }
+        }}
     """
-
-    EMOJI_BUTTON = """
-        QPushButton {
-            background-color: rgba(255, 255, 255, 0.92);
-            border: 2px solid rgba(255, 107, 107, 0.3);
-            border-radius: 25px;
-            padding: 5px;
-            font-size: 24px;
-            min-width: 50px;
-            min-height: 50px;
-        }
-        QPushButton:hover {
-            border: 2px solid #FF6B6B;
-            background-color: white;
-        }
-    """
-
-    MENU_BAR = """
-        QMenuBar {
-            background-color: rgba(255, 255, 255, 0.92);
-            border-bottom: 1px solid rgba(255, 107, 107, 0.3);
-            padding: 5px;
-        }
-        QMenuBar::item {
-            padding: 8px 15px;
-            color: #2C3E50;
-            border-radius: 15px;
-            margin: 2px;
-        }
-        QMenuBar::item:selected {
-            background-color: #FF6B6B;
-            color: white;
-        }
-        QMenu {
-            background-color: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(255, 107, 107, 0.3);
-            border-radius: 10px;
-            padding: 5px;
-        }
-        QMenu::item {
-            padding: 8px 25px;
-            border-radius: 5px;
-        }
-        QMenu::item:selected {
-            background-color: #FF6B6B;
-            color: white;
-        }
-    """
-
-    LOVE_METER = """
-        QProgressBar {
-            border: none;
-            border-radius: 10px;
-            text-align: center;
-            height: 20px;
-            background-color: rgba(255, 107, 107, 0.1);
-        }
-        QProgressBar::chunk {
-            background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                                            stop:0 #FF6B6B, stop:1 #FF8787);
-            border-radius: 10px;
-        }
-    """
-
-    CALENDAR = """
-        QCalendarWidget {
-            background-color: rgba(255, 255, 255, 0.92);
-            border-radius: 15px;
-        }
-        QCalendarWidget QToolButton {
-            color: #2C3E50;
+    
+    MESSAGE_INPUT = f"""
+        QLineEdit {{
             background-color: transparent;
             border: none;
-            border-radius: 15px;
-            padding: 5px;
+            padding: 8px;
+            font-size: {LoveTheme.FONT_NORMAL};
+            color: {LoveTheme.BLACK};
+        }}
+        QLineEdit::placeholder {{
+            color: {LoveTheme.GRAY};
+        }}
+    """
+    
+    SEND_BUTTON = f"""
+        QPushButton {{
+            background-color: {LoveTheme.PRIMARY};
+            color: {LoveTheme.WHITE};
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: {LoveTheme.FONT_NORMAL};
             font-weight: bold;
-        }
-        QCalendarWidget QToolButton:hover {
-            background-color: #FF6B6B;
-            color: white;
-        }
-        QCalendarWidget QMenu {
-            background-color: white;
-            border: 1px solid #E0E0E0;
-            border-radius: 5px;
-        }
-        QCalendarWidget QSpinBox {
-            border: 1px solid #E0E0E0;
-            border-radius: 5px;
-            padding: 3px;
-        }
-        QCalendarWidget QTableView {
-            selection-background-color: #FF6B6B;
-            selection-color: white;
-            alternate-background-color: rgba(255, 107, 107, 0.1);
-        }
+        }}
+        QPushButton:hover {{
+            background-color: #006ACD;
+        }}
+        QPushButton:pressed {{
+            background-color: #0055A4;
+        }}
     """
