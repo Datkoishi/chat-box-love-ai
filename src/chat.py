@@ -1,17 +1,91 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                           QTextEdit, QPushButton, QMenuBar, QMenu, QAction,
-                           QLabel, QFrame, QScrollArea, QSizePolicy)
+                           QTextEdit, QPushButton, QLabel, QFrame, QScrollArea, 
+                           QSizePolicy, QSpacerItem)
 from PyQt5.QtCore import Qt, QTimer, QSize, QPropertyAnimation, QRect
 from PyQt5.QtGui import QFont, QColor, QIcon, QPixmap
-from .widgets.heart_widget import HeartAnimation
-from .widgets.emoji_picker import EmojiPicker
-from .widgets.message_animation import MessageAnimation
-from .widgets.love_features import LoveMeter, LoveCalendar, LoveQuotes
-from .data.topics import load_topics
-from .data.emotions import load_emotions
-from .ui.styles import StyleSheet
 import random
 import emoji
+import datetime
+
+class MessengerStyle:
+    # Colors
+    PRIMARY_BLUE = "#0099FF"
+    LIGHT_GRAY = "#F0F2F5"
+    DARK_TEXT = "#050505"
+    SECONDARY_TEXT = "#65676B"
+    WHITE = "#FFFFFF"
+    HOVER_GRAY = "#E4E6EB"
+    
+    # Dimensions
+    SIDEBAR_WIDTH = 320
+    HEADER_HEIGHT = 64
+    INPUT_HEIGHT = 44
+    
+    # Styles
+    MAIN_WINDOW = f"""
+        QMainWindow {{
+            background-color: {WHITE};
+        }}
+    """
+    
+    SIDEBAR = f"""
+        QWidget {{
+            background-color: {WHITE};
+            border-right: 1px solid #E4E6EB;
+        }}
+    """
+    
+    CHAT_AREA = f"""
+        QScrollArea {{
+            background-color: {WHITE};
+            border: none;
+        }}
+        QScrollBar:vertical {{
+            border: none;
+            background: {WHITE};
+            width: 8px;
+            margin: 0;
+        }}
+        QScrollBar::handle:vertical {{
+            background: #BCC0C4;
+            min-height: 30px;
+            border-radius: 4px;
+        }}
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+            height: 0px;
+        }}
+    """
+    
+    INPUT_AREA = f"""
+        QFrame {{
+            background-color: {WHITE};
+            border-top: 1px solid #E4E6EB;
+        }}
+    """
+    
+    MESSAGE_INPUT = f"""
+        QTextEdit {{
+            background-color: {LIGHT_GRAY};
+            border: none;
+            border-radius: 20px;
+            padding: 12px 12px;
+            font-size: 15px;
+            color: {DARK_TEXT};
+        }}
+    """
+    
+    SEND_BUTTON = f"""
+        QPushButton {{
+            background-color: transparent;
+            border: none;
+            padding: 8px;
+            qproperty-iconSize: 24px 24px;
+        }}
+        QPushButton:hover {{
+            background-color: {LIGHT_GRAY};
+            border-radius: 50%;
+        }}
+    """
 
 class ChatBubble(QFrame):
     def __init__(self, message, is_user=False, parent=None):
@@ -21,71 +95,79 @@ class ChatBubble(QFrame):
         
     def init_ui(self, message):
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(10, 5, 10, 5)
+        layout.setContentsMargins(16, 2, 16, 2)
+        layout.setSpacing(8)
         
         if not self.is_user:
             # Bot avatar
-            avatar_label = QLabel()
-            avatar_pixmap = QPixmap("src/assets/bot_avatar.png")
-            if avatar_pixmap.isNull():
-                # Fallback if image not found
-                avatar_label.setText("🤖")
-                avatar_label.setStyleSheet("""
-                    QLabel {
-                        background: #FF6B6B;
-                        border-radius: 20px;
-                        padding: 10px;
-                        font-size: 20px;
-                    }
-                """)
-            else:
-                avatar_pixmap = avatar_pixmap.scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                avatar_label.setPixmap(avatar_pixmap)
-            avatar_label.setFixedSize(40, 40)
-            layout.addWidget(avatar_label)
-
-        # Message content
+            avatar_frame = QFrame()
+            avatar_frame.setFixedSize(28, 28)
+            avatar_frame.setStyleSheet(f"""
+                QFrame {{
+                    background-color: {MessengerStyle.PRIMARY_BLUE};
+                    border-radius: 14px;
+                    margin-right: 8px;
+                }}
+            """)
+            avatar_layout = QHBoxLayout(avatar_frame)
+            avatar_layout.setContentsMargins(0, 0, 0, 0)
+            
+            avatar_label = QLabel("AI")
+            avatar_label.setStyleSheet("""
+                QLabel {
+                    color: white;
+                    font-weight: bold;
+                    font-size: 12px;
+                }
+            """)
+            avatar_label.setAlignment(Qt.AlignCenter)
+            avatar_layout.addWidget(avatar_label)
+            
+            layout.addWidget(avatar_frame)
+        else:
+            layout.addSpacerItem(QSpacerItem(36, 1))
+        
+        # Message container
         message_container = QFrame()
         message_container.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         message_layout = QVBoxLayout(message_container)
         message_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Add name for bot messages
-        if not self.is_user:
-            name_label = QLabel("Love AI")
-            name_label.setStyleSheet("""
-                QLabel {
-                    color: #FF6B6B;
-                    font-weight: bold;
-                    font-size: 12px;
-                    margin-bottom: 2px;
-                }
-            """)
-            message_layout.addWidget(name_label)
+        message_layout.setSpacing(2)
         
         # Message text
+        message_frame = QFrame()
+        message_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {MessengerStyle.PRIMARY_BLUE if self.is_user else MessengerStyle.LIGHT_GRAY};
+                border-radius: 18px;
+                padding: 8px 12px;
+            }}
+        """)
+        message_frame_layout = QVBoxLayout(message_frame)
+        message_frame_layout.setContentsMargins(8, 8, 8, 8)
+        
         message_label = QLabel(message)
         message_label.setWordWrap(True)
         message_label.setStyleSheet(f"""
             QLabel {{
-                background-color: {'#DCF8C6' if self.is_user else 'white'};
-                border-radius: 15px;
-                padding: 10px 15px;
-                font-size: 14px;
-                color: #2C3E50;
+                color: {'white' if self.is_user else MessengerStyle.DARK_TEXT};
+                font-size: 15px;
+                line-height: 20px;
             }}
         """)
-        message_layout.addWidget(message_label)
+        message_frame_layout.addWidget(message_label)
+        message_layout.addWidget(message_frame)
         
         # Time stamp
-        time_label = QLabel("Vừa xong")
-        time_label.setStyleSheet("""
-            QLabel {
-                color: #999;
-                font-size: 11px;
+        time_label = QLabel(datetime.datetime.now().strftime("%H:%M"))
+        time_label.setStyleSheet(f"""
+            QLabel {{
+                color: {MessengerStyle.SECONDARY_TEXT};
+                font-size: 12px;
                 margin-top: 2px;
-            }
+            }}
         """)
+        time_label.setAlignment(Qt.AlignLeft if not self.is_user else Qt.AlignRight)
         message_layout.addWidget(time_label)
         
         if self.is_user:
@@ -100,44 +182,22 @@ class ChatArea(QScrollArea):
         self.init_ui()
         
     def init_ui(self):
+        self.setStyleSheet(MessengerStyle.CHAT_AREA)
+        
         # Container widget
         self.container = QWidget()
-        self.container.setStyleSheet("""
-            QWidget {
-                background-color: #F0F2F5;
-            }
-        """)
+        self.container.setStyleSheet(f"background-color: {MessengerStyle.WHITE};")
         
         # Layout for messages
         self.layout = QVBoxLayout(self.container)
-        self.layout.setSpacing(10)
-        self.layout.setContentsMargins(0, 10, 0, 10)
+        self.layout.setSpacing(4)
+        self.layout.setContentsMargins(0, 20, 0, 20)
         self.layout.addStretch()
         
         # Set up scroll area
         self.setWidget(self.container)
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setStyleSheet("""
-            QScrollArea {
-                border: none;
-                background-color: #F0F2F5;
-            }
-            QScrollBar:vertical {
-                border: none;
-                background: #F0F2F5;
-                width: 10px;
-                margin: 0;
-            }
-            QScrollBar::handle:vertical {
-                background: rgba(0, 0, 0, 0.2);
-                min-height: 20px;
-                border-radius: 5px;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-        """)
         
     def add_message(self, message, is_user=False):
         bubble = ChatBubble(message, is_user)
@@ -152,179 +212,266 @@ class ChatArea(QScrollArea):
 class ChatLoveAI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.topics = load_topics()
-        self.emotions = load_emotions()
-        self.typing_timer = QTimer(self)
-        self.typing_timer.timeout.connect(self.show_typing_animation)
-        self.is_typing = False
         self.init_ui()
         
     def init_ui(self):
-        self.setWindowTitle('Chat Love AI 💕')
-        self.setStyleSheet(StyleSheet.MAIN_WINDOW)
-        self.setMinimumSize(800, 600)
+        self.setWindowTitle('Messenger')
+        self.setStyleSheet(MessengerStyle.MAIN_WINDOW)
+        self.setMinimumSize(950, 650)
         
-        # Create central widget
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
-        layout.setSpacing(0)
-        layout.setContentsMargins(0, 0, 0, 0)
+        # Main widget and layout
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        main_layout = QHBoxLayout(main_widget)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Create header
-        self.create_header(layout)
+        # Add sidebar
+        self.create_sidebar(main_layout)
         
-        # Create chat area
+        # Create chat container
+        chat_container = QWidget()
+        chat_layout = QVBoxLayout(chat_container)
+        chat_layout.setSpacing(0)
+        chat_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Add header
+        self.create_header(chat_layout)
+        
+        # Add chat area
         self.chat_area = ChatArea()
-        layout.addWidget(self.chat_area)
+        chat_layout.addWidget(self.chat_area)
         
-        # Create input area
-        self.create_input_area(layout)
+        # Add input area
+        self.create_input_area(chat_layout)
+        
+        main_layout.addWidget(chat_container)
         
         # Send welcome message
         self.display_welcome_message()
         
+    def create_sidebar(self, layout):
+        sidebar = QWidget()
+        sidebar.setFixedWidth(MessengerStyle.SIDEBAR_WIDTH)
+        sidebar.setStyleSheet(MessengerStyle.SIDEBAR)
+        
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setSpacing(0)
+        sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Search bar
+        search_container = QFrame()
+        search_container.setFixedHeight(MessengerStyle.HEADER_HEIGHT)
+        search_container.setStyleSheet(f"background-color: {MessengerStyle.WHITE};")
+        search_layout = QHBoxLayout(search_container)
+        search_layout.setContentsMargins(16, 8, 16, 8)
+        
+        search_frame = QFrame()
+        search_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {MessengerStyle.LIGHT_GRAY};
+                border-radius: 50px;
+                padding: 8px 16px;
+            }}
+        """)
+        search_frame_layout = QHBoxLayout(search_frame)
+        search_frame_layout.setContentsMargins(0, 0, 0, 0)
+        
+        search_icon = QLabel("🔍")
+        search_text = QLabel("Tìm kiếm trên Messenger")
+        search_text.setStyleSheet(f"""
+            QLabel {{
+                color: {MessengerStyle.SECONDARY_TEXT};
+                font-size: 15px;
+            }}
+        """)
+        search_frame_layout.addWidget(search_icon)
+        search_frame_layout.addWidget(search_text)
+        search_layout.addWidget(search_frame)
+        
+        sidebar_layout.addWidget(search_container)
+        
+        # Chats list
+        chats_label = QLabel("Chat")
+        chats_label.setStyleSheet("""
+            QLabel {
+                font-size: 17px;
+                font-weight: bold;
+                padding: 16px;
+            }
+        """)
+        sidebar_layout.addWidget(chats_label)
+        
+        # Active chat
+        active_chat = QFrame()
+        active_chat.setStyleSheet(f"""
+            QFrame {{
+                background-color: {MessengerStyle.LIGHT_GRAY};
+                border-radius: 8px;
+                margin: 0 8px;
+            }}
+        """)
+        active_chat_layout = QHBoxLayout(active_chat)
+        
+        chat_avatar = QLabel("AI")
+        chat_avatar.setFixedSize(56, 56)
+        chat_avatar.setStyleSheet(f"""
+            QLabel {{
+                background-color: {MessengerStyle.PRIMARY_BLUE};
+                color: white;
+                border-radius: 28px;
+                font-weight: bold;
+                font-size: 20px;
+            }}
+        """)
+        chat_avatar.setAlignment(Qt.AlignCenter)
+        
+        chat_info = QVBoxLayout()
+        chat_name = QLabel("Love AI")
+        chat_name.setStyleSheet("""
+            QLabel {
+                font-weight: bold;
+                font-size: 15px;
+            }
+        """)
+        chat_preview = QLabel("Đang hoạt động")
+        chat_preview.setStyleSheet(f"""
+            QLabel {{
+                color: {MessengerStyle.SECONDARY_TEXT};
+                font-size: 13px;
+            }}
+        """)
+        chat_info.addWidget(chat_name)
+        chat_info.addWidget(chat_preview)
+        
+        active_chat_layout.addWidget(chat_avatar)
+        active_chat_layout.addLayout(chat_info)
+        active_chat_layout.addStretch()
+        
+        sidebar_layout.addWidget(active_chat)
+        sidebar_layout.addStretch()
+        
+        layout.addWidget(sidebar)
+        
     def create_header(self, layout):
         header = QFrame()
-        header.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border-bottom: 1px solid #E4E6EB;
-            }
+        header.setFixedHeight(MessengerStyle.HEADER_HEIGHT)
+        header.setStyleSheet(f"""
+            QFrame {{
+                background-color: {MessengerStyle.WHITE};
+                border-bottom: 1px solid {MessengerStyle.LIGHT_GRAY};
+            }}
         """)
-        header.setFixedHeight(60)
         
         header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(15, 0, 15, 0)
+        header_layout.setContentsMargins(16, 0, 16, 0)
         
-        # Bot info
-        info_layout = QHBoxLayout()
+        # Chat info
+        chat_info = QHBoxLayout()
         
-        avatar_label = QLabel("🤖")
-        avatar_label.setStyleSheet("""
-            QLabel {
-                background: #FF6B6B;
+        avatar = QLabel("AI")
+        avatar.setFixedSize(40, 40)
+        avatar.setStyleSheet(f"""
+            QLabel {{
+                background-color: {MessengerStyle.PRIMARY_BLUE};
+                color: white;
                 border-radius: 20px;
-                padding: 10px;
-                font-size: 20px;
-            }
-        """)
-        avatar_label.setFixedSize(40, 40)
-        info_layout.addWidget(avatar_label)
-        
-        text_layout = QVBoxLayout()
-        
-        name_label = QLabel("Love AI")
-        name_label.setStyleSheet("""
-            QLabel {
-                font-size: 16px;
                 font-weight: bold;
-                color: #1C1E21;
-            }
+                font-size: 16px;
+            }}
         """)
-        text_layout.addWidget(name_label)
+        avatar.setAlignment(Qt.AlignCenter)
+        chat_info.addWidget(avatar)
         
-        status_label = QLabel("Đang hoạt động")
-        status_label.setStyleSheet("""
+        info = QVBoxLayout()
+        name = QLabel("Love AI")
+        name.setStyleSheet("""
             QLabel {
-                color: #65676B;
-                font-size: 13px;
+                font-weight: bold;
+                font-size: 15px;
             }
         """)
-        text_layout.addWidget(status_label)
+        status = QLabel("Đang hoạt động")
+        status.setStyleSheet(f"""
+            QLabel {{
+                color: {MessengerStyle.SECONDARY_TEXT};
+                font-size: 13px;
+            }}
+        """)
+        info.addWidget(name)
+        info.addWidget(status)
+        chat_info.addLayout(info)
         
-        info_layout.addLayout(text_layout)
-        header_layout.addLayout(info_layout)
+        header_layout.addLayout(chat_info)
+        header_layout.addStretch()
         
-        # Add buttons
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(10)
-        
+        # Header buttons
         for icon in ["📞", "📹", "ℹ️"]:
             button = QPushButton(icon)
-            button.setFixedSize(40, 40)
-            button.setStyleSheet("""
-                QPushButton {
-                    background-color: #F0F2F5;
-                    border-radius: 20px;
+            button.setFixedSize(36, 36)
+            button.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {MessengerStyle.LIGHT_GRAY};
+                    border-radius: 18px;
                     font-size: 18px;
-                }
-                QPushButton:hover {
-                    background-color: #E4E6EB;
-                }
+                }}
+                QPushButton:hover {{
+                    background-color: {MessengerStyle.HOVER_GRAY};
+                }}
             """)
-            buttons_layout.addWidget(button)
+            header_layout.addWidget(button)
             
-        header_layout.addLayout(buttons_layout)
         layout.addWidget(header)
         
     def create_input_area(self, layout):
         input_frame = QFrame()
-        input_frame.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border-top: 1px solid #E4E6EB;
-            }
-        """)
+        input_frame.setStyleSheet(MessengerStyle.INPUT_AREA)
         input_layout = QHBoxLayout(input_frame)
-        input_layout.setContentsMargins(15, 10, 15, 10)
+        input_layout.setContentsMargins(16, 12, 16, 12)
+        input_layout.setSpacing(8)
         
-        # Add emoji picker
-        emoji_button = QPushButton("😊")
-        emoji_button.setFixedSize(40, 40)
-        emoji_button.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border-radius: 20px;
-                font-size: 22px;
-            }
-            QPushButton:hover {
-                background-color: #F0F2F5;
-            }
-        """)
-        input_layout.addWidget(emoji_button)
+        # Add buttons before input
+        for icon in ["➕", "📷", "😊"]:
+            button = QPushButton(icon)
+            button.setFixedSize(36, 36)
+            button.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: transparent;
+                    border-radius: 18px;
+                    font-size: 20px;
+                }}
+                QPushButton:hover {{
+                    background-color: {MessengerStyle.LIGHT_GRAY};
+                }}
+            """)
+            input_layout.addWidget(button)
         
         # Add message input
         self.message_input = QTextEdit()
-        self.message_input.setPlaceholderText("Nhắn tin...")
-        self.message_input.setFixedHeight(40)
-        self.message_input.setStyleSheet("""
-            QTextEdit {
-                background-color: #F0F2F5;
-                border: none;
-                border-radius: 20px;
-                padding: 10px 15px;
-                font-size: 14px;
-            }
-        """)
+        self.message_input.setPlaceholderText("Aa")
+        self.message_input.setFixedHeight(MessengerStyle.INPUT_HEIGHT)
+        self.message_input.setStyleSheet(MessengerStyle.MESSAGE_INPUT)
         input_layout.addWidget(self.message_input)
         
         # Add send button
-        send_button = QPushButton("Gửi")
-        send_button.setFixedSize(60, 40)
-        send_button.setStyleSheet("""
-            QPushButton {
-                background-color: #0084FF;
-                color: white;
-                border: none;
-                border-radius: 20px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #0073E6;
-            }
+        send_button = QPushButton("➤")
+        send_button.setFixedSize(36, 36)
+        send_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border-radius: 18px;
+                font-size: 20px;
+                color: {MessengerStyle.PRIMARY_BLUE};
+            }}
+            QPushButton:hover {{
+                background-color: {MessengerStyle.LIGHT_GRAY};
+            }}
         """)
         send_button.clicked.connect(self.send_message)
         input_layout.addWidget(send_button)
         
         layout.addWidget(input_frame)
         
-    def show_typing_animation(self):
-        if self.is_typing:
-            self.typing_dots = (self.typing_dots + 1) % 4
-            dots = "." * self.typing_dots
-            self.chat_area.add_message(f"Đang nhập{dots}", False)
-            
     def display_welcome_message(self):
         welcome_messages = [
             "Xin chào! Hãy chia sẻ với tôi điều bạn đang cảm thấy 💕",
@@ -336,56 +483,16 @@ class ChatLoveAI(QMainWindow):
     def send_message(self):
         message = self.message_input.toPlainText().strip()
         if message:
-            # Display user message
             self.chat_area.add_message(message, True)
-            
-            # Clear input
             self.message_input.clear()
-            
-            # Start typing animation
-            self.is_typing = True
-            self.typing_dots = 0
-            self.typing_timer.start(500)
-            
-            # Generate and display bot response after delay
-            QTimer.singleShot(2000, lambda: self.generate_response(message))
+            QTimer.singleShot(1000, lambda: self.generate_response(message))
             
     def generate_response(self, user_message):
-        # Stop typing animation
-        self.is_typing = False
-        self.typing_timer.stop()
-        
-        # Analyze message sentiment
-        love_keywords = {
-            'positive': ['yêu', 'thích', 'vui', 'hạnh phúc', 'tuyệt vời', 'nhớ', 'thương', 'quan tâm', 'ngọt ngào'],
-            'negative': ['buồn', 'chán', 'khó', 'cô đơn', 'thất tình', 'chia tay', 'giận'],
-            'question': ['làm sao', 'thế nào', 'tại sao', 'có nên', 'bằng cách nào']
-        }
-
-        message_lower = user_message.lower()
-        
-        # Analyze message type
-        is_positive = any(word in message_lower for word in love_keywords['positive'])
-        is_negative = any(word in message_lower for word in love_keywords['negative'])
-        is_question = any(word in message_lower for word in love_keywords['question'])
-        
-        # Generate appropriate response
-        if is_question:
-            response = random.choice(self.topics['advice'])
-        elif is_positive:
-            response = random.choice(self.topics['positive'])
-        elif is_negative:
-            response = random.choice(self.topics['comfort'])
-        else:
-            response = random.choice(self.topics['neutral'])
-            
-        # Add random quote
-        if random.random() < 0.3:  # 30% chance to add quote
-            response += f"\n\n{LoveQuotes.get_random_quote()}"
-            
-        # Add emotion
-        emotion = random.choice(self.emotions)
-        response = f"{response} {emotion}"
-        
-        # Display response
-        self.chat_area.add_message(response, False)
+        responses = [
+            "Tôi hiểu cảm xúc của bạn 💕",
+            "Hãy chia sẻ thêm với tôi nhé! 🌟",
+            "Tình yêu thật tuyệt vời, phải không? 💝",
+            "Đôi khi ta cần thời gian để hiểu rõ trái tim mình 💭",
+            "Hãy luôn giữ niềm tin vào tình yêu nhé! ✨"
+        ]
+        self.chat_area.add_message(random.choice(responses), False)
